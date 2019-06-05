@@ -8,108 +8,129 @@ from mrcnn.model import MaskRCNN
 from pathlib import Path
 
 
-
-
-
-
-# Configuration that will be used by the Mask-RCNN library
 class MaskRCNNConfig(mrcnn.config.Config):
     NAME = "coco_pretrained_model_config"
     IMAGES_PER_GPU = 1
     GPU_COUNT = 1
-    NUM_CLASSES = 1 + 80  # COCO dataset has 80 classes + one background class
+    NUM_CLASSES = 1 + 80  
     DETECTION_MIN_CONFIDENCE = 0.6
 
 
-# Filter a list of Mask R-CNN detection results to get only the detected cars / trucks
+
 def get_car_boxes(boxes, class_ids):
     car_boxes = []
 
     for i, box in enumerate(boxes):
-        # If the detected object isn't a car / truck, skip it
         if class_ids[i] in [3, 8, 6]:
-            car_boxes.append(box)
+            car_boxes.append(box) 
 
     return np.array(car_boxes)
 
-
-# Root directory of the project
-ROOT_DIR = os.path.abspath("../") #최상위 경로 지정
+ROOT_DIR = os.path.abspath("../") 
 sys.path.append(ROOT_DIR)
 
-# Directory to save logs and trained model
-MODEL_DIR = os.path.join(ROOT_DIR, "logs")
+MODEL_DIR = os.path.join(ROOT_DIR , "logs")
 
-# Local path to trained weights file
-COCO_MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
 
-# Download COCO trained weights from Releases if needed
+COCO_MODEL_PATH = os.path.join(ROOT_DIR,"mask_rcnn_coco.h5")
+
+
 if not os.path.exists(COCO_MODEL_PATH):
-    mrcnn.utils.download_trained_weights(COCO_MODEL_PATH)
+    mrcnn.utils.download_trained_weights(COCO_MODEL_PATH) 
 
-# Directory of images to run detection on
-IMAGE_DIR = os.path.join(ROOT_DIR, "images")
 
-# Video file or camera to process - set this to 0 to use your webcam instead of a video file
-#VIDEO_SOURCE = "test_images/parking.mp4"
+IMAGE_DIR = os.path.join (ROOT_DIR,"images")
 
-# Create a Mask-RCNN model in inference mode
-model = MaskRCNN(mode="inference", model_dir=MODEL_DIR, config=MaskRCNNConfig())
 
-# Load pre-trained model
+model = MaskRCNN (mode="inference", model_dir=MODEL_DIR, config=MaskRCNNConfig())
+
+
 model.load_weights(COCO_MODEL_PATH, by_name=True)
 
-# Location of parking spaces
 parked_car_boxes = None
 
-# Load the video file we want to run detection on
-video_capture = cv2.VideoCapture('parking2.mp4')
 
-# Loop over each frame of video
+video_capture = cv2.VideoCapture('parking4.mp4')
+
+
+free_space_frames = 0
+
+
 while video_capture.isOpened():
-
     success, frame = video_capture.read()
     if not success:
         break
 
-    # Convert the image from BGR color (which OpenCV uses) to RGB color
+ 
     rgb_image = frame[:, :, ::-1]
 
-    # Run the image through the Mask R-CNN model to get results.
     results = model.detect([rgb_image], verbose=0)
 
-    # Mask R-CNN assumes we are running detection on multiple images.
-    # We only passed in one image to detect, so only grab the first result.
+ 
     r = results[0]
 
-    # The r variable will now have the results of detection:
-    # - r['rois'] are the bounding box of each detected object
-    # - r['class_ids'] are the class id (type) of each detected object
-    # - r['scores'] are the confidence scores for each detection
-    # - r['masks'] are the object masks for each detected object (which gives you the object outline)
 
-    # Filter the results to only grab the car / truck bounding boxes
-    car_boxes = get_car_boxes(r['rois'], r['class_ids'])
 
-    print("Cars found in frame of video:")
+    if parked_car_boxes is None:
+    
+        parked_car_boxes = get_car_boxes(r['rois'], r['class_ids'])
+    else :
+      
 
-    # Draw each box on the frame
-    for box in car_boxes:
-        
-        print("Car: ", box)
+      
+        car_boxes = get_car_boxes(r['rois'], r['class_ids'])
 
-        y1, x1, y2, x2 = box
+        overlaps = mrcnn.utils.compute_overlaps(parked_car_boxes, car_boxes)
 
-        # Draw the box
-        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 1)
+    
+        free_space = False
 
-    # Show the frame of video on the screen
-    cv2.imshow('Video', frame)
+ 
+        for parking_area, overlap_areas in zip(parked_car_boxes, overlaps):
 
-    # Hit 'q' to quit
+      
+            max_IoU_overlap = np.max(overlap_areas)
+
+            y1, x1, y2, x2 = parking_area
+
+       
+            if max_IoU_overlap < 0.15:
+             
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 3)
+            
+                free_space = True
+            else:
+             
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 1)
+
+   
+            font = cv2.FONT_HERSHEY_DUPLEX
+            cv2.putText(frame, f"{max_IoU_overlap:0.2}", (x1 + 6, y2 - 6), font, 0.3, (255, 255, 255))
+
+        if free_space:
+            free_space_frames += 1
+        else:
+            free_space_frames = 0
+
+        """ if free_space_frames > 10 :
+            # 공간을 쓰십시오 !! 화면 상단에
+            font = cv2.FONT_HERSHEY_DUPLEX
+            cv2.putText(frame, f"SPACE AVAILABLE!", (10, 150), font, 3.0, (0, 255, 0), 2, cv2.FILLED)
+
+            # 아직 SMS를 보내지 않았다면 보내주십시오!
+             if not sms_sent:
+                print("SENDING SMS!!!")
+                message = client.messages.create(
+                    body="Parking space open - go go go!",
+                    from_=twilio_phone_number,
+                    to=destination_phone_number
+                )
+                sms_sent = True  """
+
+        cv2.imshow('Video', frame)
+
     if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+         break 
 
-# Clean up everything when finished
-video_capture.release()
-cv2.destroyAllWindows()
+video_capture.release ()
+cv2.destroyAllWindows ()
