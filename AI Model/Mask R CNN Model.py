@@ -111,22 +111,7 @@ while video_capture.isOpened():
             free_space_frames += 1
         else:
             free_space_frames = 0
-
-        """ if free_space_frames > 10 :
-            # 공간을 쓰십시오 !! 화면 상단에
-            font = cv2.FONT_HERSHEY_DUPLEX
-            cv2.putText(frame, f"SPACE AVAILABLE!", (10, 150), font, 3.0, (0, 255, 0), 2, cv2.FILLED)
-
-            # 아직 SMS를 보내지 않았다면 보내주십시오!
-             if not sms_sent:
-                print("SENDING SMS!!!")
-                message = client.messages.create(
-                    body="Parking space open - go go go!",
-                    from_=twilio_phone_number,
-                    to=destination_phone_number
-                )
-                sms_sent = True  """
-
+            
         cv2.imshow('Video', frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
