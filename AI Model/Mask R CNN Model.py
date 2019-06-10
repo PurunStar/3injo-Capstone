@@ -166,20 +166,7 @@ while video_capture.isOpened():
             free_space_frames = 0
 
         # 공간이 여러 프레임에 대해 자유라면, 우리는 그것이 정말로 무료라는 것을 꽤 확신합니다!
-        """ if free_space_frames > 10 :
-            # 공간을 쓰십시오 !! 화면 상단에
-            font = cv2.FONT_HERSHEY_DUPLEX
-            cv2.putText(frame, f"SPACE AVAILABLE!", (10, 150), font, 3.0, (0, 255, 0), 2, cv2.FILLED)
 
-            # 아직 SMS를 보내지 않았다면 보내주십시오!
-             if not sms_sent:
-                print("SENDING SMS!!!")
-                message = client.messages.create(
-                    body="Parking space open - go go go!",
-                    from_=twilio_phone_number,
-                    to=destination_phone_number
-                )
-                sms_sent = True  """
 
         # 화면에 비디오 프레임 표시
         cv2.imshow('Video', frame)
