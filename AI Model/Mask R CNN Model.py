@@ -62,7 +62,6 @@ video_capture = cv2.VideoCapture('parking4.mp4')
 # 우리는 열려있는 주차 공간이있는 행에서 본 적이 얼마나 많은 비디오의 프레임
 free_space_frames = 0
 
-# 김민중
 xydic = dict()
 xydicstate = dict()
 url = 'http://119.77.100.41:8000'
