@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">주차 관제 시스템</string>
+    <string name="default_notification_channel_id">999</string>
+</resources>
