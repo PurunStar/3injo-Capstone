@@ -64,7 +64,8 @@ free_space_frames = 0
 
 # 김민중
 xydic = dict()
-url = 'http://localhost:8000'
+xydicstate = dict()
+url = 'http://119.77.100.41:8000'
 
 # 동영상의 각 프레임을 반복합니다.
 while video_capture.isOpened():
@@ -118,6 +119,7 @@ while video_capture.isOpened():
             y1, x1, y2, x2 = parking_area
             
             if xykey not in xydic:
+                xydicstate[xykey] = 1
                 xydic[xykey] = 0
                 response = requests.get(url=url+"/initxy/"+xykey)
                 print(response)
@@ -126,22 +128,32 @@ while video_capture.isOpened():
             # IoU를 사용하여 0.15 이상
             if max_IoU_overlap < 0.15:
                 # 주위에 녹색 상자 그리기
-                xydic[xykey] = xydic[xykey] + 1
+                if xydic[xykey] < 5:
+                    xydic[xykey] = xydic[xykey] + 1
                 
-                
-                if xydic[xykey] > 6:
-                    response = requests.get(url=url+"/addstack/"+xykey+"/"+str(xydic[xykey]))
+                elif xydic[xykey] >= 5:
+                    if xydicstate[xykey] == 1:
+                        response = requests.get(url=url+"/addstack/"+xykey+"/"+str(xydic[xykey]))
+                        xydicstate[xykey] *= -1
+
+
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 3)
-                # 우리가 적어도 하나의 열린 공간을 보았던 것을 나타내는 깃발
+                    # 우리가 적어도 하나의 열린 공간을 보았던 것을 나타내는 깃발
                     free_space = True
                   
             else:
+
                 # 주차 공간이 여전히 채워져 있습니다. - 주위에 빨간색 상자를 그립니다.
+                if xydic[xykey] == 5:
+                    response = requests.get(url=url+"/substack/"+xykey)
+                    xydicstate[xykey] *= -1
+
                 xydic[xykey] = 0
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 1)
 
             # 상자 안에 IoU 측정 값을 씁니다.
             font = cv2.FONT_HERSHEY_DUPLEX
+
             cv2.putText(frame, f"{max_IoU_overlap:0.2}", (x1 + 6, y2 - 6), font, 0.3, (255, 255, 255))
 
         # 적어도 하나의 공간이 비어 있으면 프레임 계산 시작
