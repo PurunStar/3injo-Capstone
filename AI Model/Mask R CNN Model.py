@@ -6,9 +6,7 @@ import mrcnn.utils
 import sys
 from mrcnn.model import MaskRCNN
 from pathlib import Path
-
 import requests
-
 
 
 class MaskRCNNConfig(mrcnn.config.Config):
@@ -25,7 +23,6 @@ def get_car_boxes(boxes, class_ids):
     for i, box in enumerate(boxes):
         if class_ids[i] in [3, 8, 6]:
             car_boxes.append(box) 
-
     return np.array(car_boxes)
 
 
@@ -52,7 +49,6 @@ video_capture = cv2.VideoCapture('parking4.mp4')
 
 free_space_frames = 0
 
-
 xydic = dict()
 xydicstate = dict()
 url = 'http://119.77.100.41:8000'
@@ -76,9 +72,6 @@ while video_capture.isOpened():
         overlaps = mrcnn.utils.compute_overlaps(parked_car_boxes, car_boxes)
         free_space = False
 
-        
-
-
         for parking_area, overlap_areas in zip(parked_car_boxes, overlaps):
             xykey = ",".join(map(str,parking_area))
             max_IoU_overlap = np.max(overlap_areas)
@@ -100,7 +93,6 @@ while video_capture.isOpened():
                         response = requests.get(url=url+"/addstack/"+xykey+"/"+str(xydic[xykey]))
                         xydicstate[xykey] *= -1
 
-
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 3)
                     free_space = True
                   
@@ -113,7 +105,6 @@ while video_capture.isOpened():
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 1)
 
             font = cv2.FONT_HERSHEY_DUPLEX
-
             cv2.putText(frame, f"{max_IoU_overlap:0.2}", (x1 + 6, y2 - 6), font, 0.3, (255, 255, 255))
 
         if free_space:
