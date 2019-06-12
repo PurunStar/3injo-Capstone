@@ -8,7 +8,7 @@ linenum = list()
 array1 = []
 array2 = []
 array3 = []
-
+g_flag = 0
 def initxy(reqeust, xy):
     if reqeust.method == "GET":
         xydic[xy] = 0
@@ -26,8 +26,10 @@ def initxy(reqeust, xy):
 
 
 
-def addstack(reqeust, xy, stack):  # 빈자리 생길때 호출 함수 
+def addstack(reqeust, xy, stack):  # 빈자리 생길때 호출 함수
+    global g_flag
     if reqeust.method == "GET":
+        g_flag+=1
         xydic[xy] = stack
         i = 0
         for a in linenum: # 1번라인, 2번라인, 3번라인
@@ -56,19 +58,37 @@ def addstack(reqeust, xy, stack):  # 빈자리 생길때 호출 함수
         return JsonResponse({'state' : 'secces',}, json_dumps_params = {'ensure_ascii': True})
 
 def substack(reqeust, xy):
+    global g_flag
     if reqeust.method == "GET":
+        g_flag-=1
         xydic[xy] = 0  
         print(xy, "empty")
-        return JsonResponse({'state' : 'secces',}, json_dumps_params = {'ensure_ascii': True})
+        return JsonResponse({'state' : 'se`cces',}, json_dumps_params = {'ensure_ascii': True})
 
-def getFlag(request):
+
+#tensorflow
+def getFlag(request,b):
+        global g_flag
         if request.method == "GET":
+                count = b
                 emptystack = 0
                 for flag in xydic.values():
                         if flag != 0:
                                 emptystack += 1
                 
-                return JsonResponse({'flag' : emptystack,}, json_dumps_params = {'ensure_ascii': True})
+                g_flag = emptystack+count
+                return JsonResponse({'flag' : emptystack+count,}, json_dumps_params = {'ensure_ascii': True})
+
+# android
+def getFlag2(request):
+        if request.method == "GET":
+                return JsonResponse({'flag' : g_flag}, json_dumps_params = {'ensure_ascii': True})
+
+# def exitCar(request):
+#         global g_flag
+#         if request.method == "GET":
+#                 g_flag -= 1
+#                 return JsonResponse({'flag' : g_flag}, json_dumps_params = {'ensure_ascii': True})
 
 def setLine(request, ln):
         if request.method =="GET":
